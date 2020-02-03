@@ -16,6 +16,51 @@ void initializeKeyMatrix(vector<vector<int>> &keyMatrix, int sz = 1){
 	}
 }
 
+void createCofactor(const vector<vector<int>> &matrix, int cr, int cc, vector<vector<int>> &cofactor){
+	int i = 0, j = 0;
+	int n = matrix.size();
+	for(int row = 0; row < matrix.size(); row++){
+		for(int col = 0; col < matrix[0].size(); col++){
+			if(row!=cr and col!=cc){
+				cofactor[i][j++] = matrix[row][col];
+				if(j == n-1){
+					j = 0;
+					i++;
+				}
+			}
+		}
+	}
+}
+
+int determinant(vector<vector<int>> &matrix, int n){
+	int det = 0;
+	if(n == 1) return matrix[0][0];
+
+	vector<vector<int>> cofactor(n, vector<int>(n));
+	int sign = 1;
+	for(int x = 0; x < matrix.size(); x++){
+		createCofactor(matrix, 0, x, cofactor);
+		det += sign * matrix[0][x] * determinant(cofactor, n-1);
+		sign *= (-1);
+	}
+
+	return det;
+}
+
+vector<vector<int> > matrixInverse(vector<vector<int>> &matrix){
+	vector<vector<int> > inverseMatrix(matrix.size(), vector<int>(keyMatrix[0].size()));
+
+	//	calculate determinant
+	int det = determinant(matrix, matrix.size());
+	cout<<"det: "<<det<<endl;
+
+	//	calculate adjoint
+
+	//	find the inverse
+
+	return vector<vector<int>>();
+}
+
 vector<int> encrypt(vector<int> msgMatrix, vector<vector<int>> keyMatrix){
 	vector<int> cipherMsg(n);
 
@@ -48,6 +93,7 @@ int main(){
 	cout<<endl;
 
 	//	Decryption remaining...
-
+	vector<vector<int> > inverseKeyMatrix(keyMatrix.size(), vector<int>(keyMatrix[0].size()));
+	inverseKeyMatrix = matrixInverse(keyMatrix);
 	return 0;
 }
