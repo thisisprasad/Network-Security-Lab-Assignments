@@ -4,7 +4,7 @@ using namespace std;
 const int mod = 65;
 int n;
 vector< vector<int> > keyMatrix;
-//string gfg_key = "GYBNQKURP";
+//string gfg_key = "ABCDEFGHI";
 
 template<typename T>
 void printMatrix(vector<vector<T>> matrix){
@@ -19,7 +19,7 @@ void printMatrix(vector<vector<T>> matrix){
 }
 
 void initializeKeyMatrix(vector<vector<int>> &keyMatrix, int sz = 1){
-//	int cnt = 0;
+	int cnt = 0;
 	for(int i = 0; i < keyMatrix.size(); i++){
 		for(int j = 0; j < keyMatrix[i].size(); j++){
 			keyMatrix[i][j] = rand()%mod;
@@ -88,7 +88,6 @@ vector<vector<float> > matrixInverse(vector<vector<int>> &matrix){
 
 	vector<vector<int>> adjointMatrix = getAdjointMatrix(matrix);
 
-	//	find the inverse
 	vector<vector<float>> inverseMatrix(matrix.size(), vector<float>(matrix[0].size()));
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
