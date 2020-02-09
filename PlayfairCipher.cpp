@@ -122,9 +122,6 @@ string PlayfairCipher::encrypt(const string &plainText){
 		pair<int, int> pos1 = getPos(digraph.first - 'a');
 		pair<int, int> pos2 = getPos(digraph.second - 'a');
 
-		if(pos1.first==-1 and pos1.second==-1) {cout<<"char: "<<(char)digraph.first<<", Pos1 is not correct"<<endl; continue;}
-		if(pos2.first==-1 and pos2.second==-1) {cout<<"char: "<<(char)digraph.second<<", Pos2 is not correct"<<endl; continue;}
-
 		if(pos1.first==pos2.first){
 			//same row
 			enc1 = keyMatrix[pos1.first][(pos1.second+1)%DIM_SIZE];
@@ -146,6 +143,34 @@ string PlayfairCipher::encrypt(const string &plainText){
 	return encryptedText;
 }
 
+string PlayfairCipher::decrypt(const string &encryptedText){
+	vector<pair<int, int>> digraphList = createDigraph(encryptedText);
+	char dec1, dec2;
+	string decryptedText = "";
+
+	for(auto& digraph: digraphList){
+		pair<int, int> pos1 = getPos(digraph.first - 'a');
+		pair<int, int> pos2 = getPos(digraph.second - 'a');
+
+		if(pos1.first == pos2.first){
+			dec1 = keyMatrix[pos1.first][(pos1.second-1+DIM_SIZE)%DIM_SIZE];
+			dec2 = keyMatrix[pos2.first][(pos2.second-1+DIM_SIZE)%DIM_SIZE];
+		}
+		else if(pos1.second == pos2.second){
+			dec1 = keyMatrix[(pos1.first-1+DIM_SIZE)%DIM_SIZE][pos1.second];
+			dec2 = keyMatrix[(pos2.first-1+DIM_SIZE)%DIM_SIZE][pos2.second];
+		}
+		else{
+			dec1 = keyMatrix[pos1.first][pos2.second];
+			dec2 = keyMatrix[pos2.first][pos1.second];
+		}
+
+		decryptedText += (dec1 + 'a'); decryptedText += (dec2 + 'a');
+	}
+
+	return decryptedText;
+}
+
 int main(){
 	string plainText, key;
 	cout<<"Enter plainText: ";
@@ -153,10 +178,14 @@ int main(){
 	cout<<"Enter key: ";
 	cin>>key;
 
+	bool isOdd = (plainText.size() & 1);
+
 	PlayfairCipher cipher(key);
 	string encryptedText = cipher.encrypt(plainText);
 	cout<<"ecrypted text: "<<encryptedText<<endl;
-//	string decryptedText = cipher.decrypt(encryptedText);
+	string decryptedText = cipher.decrypt(encryptedText);
+	if(isOdd) decryptedText.pop_back();
+	cout<<"Decrypted Text: "<<decryptedText<<endl;
 
 	return 0;
 }
