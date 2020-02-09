@@ -182,7 +182,7 @@ int main(){
 
 	PlayfairCipher cipher(key);
 	string encryptedText = cipher.encrypt(plainText);
-	cout<<"ecrypted text: "<<encryptedText<<endl;
+	cout<<"Encrypted text: "<<encryptedText<<endl;
 	string decryptedText = cipher.decrypt(encryptedText);
 	if(isOdd) decryptedText.pop_back();
 	cout<<"Decrypted Text: "<<decryptedText<<endl;
