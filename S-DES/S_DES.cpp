@@ -1,7 +1,3 @@
-//#include<iostream>
-//#include<fstream>
-//#include<string>
-//#include<vector>
 #include<bits/stdc++.h>
 using namespace std;
 
@@ -39,6 +35,8 @@ private:
 	void readFile(string &);
 	string applyPermutation(string &, vector<int> &);
 	void generateIntermediateKeys();
+	void circularLeftShift(string &, int );
+	void circularRightShift(string &, int );
 
 public:
 	SimplifiedDES(string fileName){
@@ -55,6 +53,7 @@ void SimplifiedDES::readFile(string &fileName){
 	file.open(fileName, ios::in);
 	if(!file){
 		cout<<"Error opening file"<<endl;
+		return ;
 	}
 	string line;
 
@@ -103,16 +102,56 @@ string SimplifiedDES::applyPermutation(string& text, vector<int>& permutation){
 		res += ch;
 	}
 
-	cout<<"permuted string: "<<res<<endl;
 	return res;
 }
 
 void SimplifiedDES::generateIntermediateKeys(){
 	string p10Key = applyPermutation(this->key, this->p10);
-	string l0 = p10Key.substr(0,5);
-	string r0 = p10Key.substr(5);
+	string leftHalf = p10Key.substr(0,5);
+	string rightHalf = p10Key.substr(5);
+	circularLeftShift(leftHalf, 1);
+	circularLeftShift(rightHalf, 1);
+	string combinedKey = leftHalf + rightHalf;
+	this->key1 = applyPermutation(combinedKey, this->p8);
 
-	cout<<"l0: "<<l0<<", r0: "<<r0<<endl;
+	leftHalf = combinedKey.substr(0, 5);
+	rightHalf = combinedKey.substr(5);
+	circularLeftShift(leftHalf, 2);
+	circularLeftShift(rightHalf, 2);
+	combinedKey = leftHalf + rightHalf;
+	this->key2 = applyPermutation(combinedKey, this->p8);
+
+	cout<<"l0: "<<leftHalf<<", r0: "<<rightHalf<<endl;
+	cout<<"Key2: "<<key2<<endl;
+}
+
+void SimplifiedDES::circularLeftShift(string& s, int shiftBy){
+	shiftBy %= s.size();
+	int pos = 0;
+	vector<char> temp;
+	for(int i = 0; i < shiftBy; i++){
+		temp.push_back(s[pos]);
+		pos++;
+	}
+	for(int i = shiftBy; i < s.size(); i++){
+		s[i-shiftBy] = s[i];
+	}
+	pos = 0;
+	for(int i = s.size()-shiftBy; i < s.size(); i++) s[i] = temp[pos++];
+}
+
+void SimplifiedDES::circularRightShift(string& s, int shiftBy){
+	shiftBy %= s.size();
+	int pos = s.size()-1;
+	vector<char> temp;
+	for(int i = 0; i < shiftBy; i++){
+		temp.push_back(s[pos]);
+		pos--;
+	}
+	for(int i = s.size()-1-shiftBy; i >= 0; i--){
+		s[i+shiftBy] = s[i];
+	}
+	for(int i = 0; i < shiftBy; i++) s[i] = temp[i];
 }
 
 string SimplifiedDES::encrypt(const string &plainText){
