@@ -79,52 +79,36 @@ void SimplifiedDES::readFile(string &fileName){
 
 	while(getline(file, line)){
 		vector<string> keyValue = split(line, ':');
-		cout<<"line: "<<line<<endl;
 		if(keyValue[0] == "key"){
 			this->key = keyValue[1];
-			cout<<"key: "<<key<<endl;
 		}
 		else if(keyValue[0] == "P10"){
 			stringToArray(keyValue[1], this->p10, 10);
-			for(auto& it: this->p10) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "P8"){
 			stringToArray(keyValue[1], this->p8, DEF_PERMUTATION_SIZE);
-			for(auto& it: this->p8) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "P4"){
 			stringToArray(keyValue[1], this->p4, 4);
-			for(auto& it: this->p4) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "IP"){
 			stringToArray(keyValue[1], this->initialPermutation, DEF_PERMUTATION_SIZE);
-			for(auto& it: this->initialPermutation) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "IP-1"){
 			stringToArray(keyValue[1], this->inversePermutation, DEF_PERMUTATION_SIZE);
-			for(auto& it: this->inversePermutation) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "E/P"){
 			stringToArray(keyValue[1], this->expansionPermutation, DEF_PERMUTATION_SIZE);
-			for(auto& it: this->expansionPermutation) cout<<it<<" ";
-			cout<<endl;
 		}
 		else if(keyValue[0] == "S0"){
 			stringToMartrix(keyValue[1], this->s0, 4, 4);
-			printMatrix(this->s0);
-			cout<<endl;
 		}
 		else if(keyValue[0] == "S1"){
 			stringToMartrix(keyValue[1], this->s1, 4,4);
-			printMatrix(this->s1);
-			cout<<endl;
 		}
 	}
+
+	file.close();
 }
 
 void SimplifiedDES::stringToArray(string &s, vector<int> &arr, int n){
@@ -170,9 +154,6 @@ void SimplifiedDES::generateIntermediateKeys(){
 	circularLeftShift(rightHalf, 2);
 	combinedKey = leftHalf + rightHalf;
 	this->key2 = applyPermutation(combinedKey, this->p8);
-
-	cout<<"l0: "<<leftHalf<<", r0: "<<rightHalf<<endl;
-	cout<<"Key2: "<<key2<<endl;
 }
 
 void SimplifiedDES::circularLeftShift(string& s, int shiftBy){
@@ -257,15 +238,28 @@ string SimplifiedDES::encrypt(const string &plainText){
 	string rightHalf = ipBits.substr(4);
 
 	string fkBits = this->FK(leftHalf, rightHalf, this->key1);
-	cout<<"First FK: "<<fkBits<<endl;
 
 	rightHalf = fkBits.substr(0, 4);
 	leftHalf = fkBits.substr(4);
 	fkBits = this->FK(leftHalf, rightHalf, this->key2);
-	cout<<"Applied fk2: "<<fkBits<<endl;
 
 	string cipherText = this->applyPermutation(fkBits, this->inversePermutation);
 	return cipherText;
+}
+
+string SimplifiedDES::decrypt(const string &encryptedText){
+	string ipInverseBits = this->applyPermutation((string &)encryptedText, this->initialPermutation);
+	string leftHalf = ipInverseBits.substr(0, 4);
+	string rightHalf = ipInverseBits.substr(4);
+
+	string fkBits = this->FK(leftHalf, rightHalf, this->key2);
+
+	rightHalf = fkBits.substr(0, 4);
+	leftHalf = fkBits.substr(4);
+	fkBits = this->FK(leftHalf, rightHalf, this->key1);
+
+	string decryptedText = this->applyPermutation(fkBits, this->inversePermutation);
+	return decryptedText;
 }
 
 int main(){
@@ -274,7 +268,12 @@ int main(){
 
 	SimplifiedDES des("des_input.txt");
 	cout<<endl;
-	string encryptedText = des.encrypt("10100101");
+	cout<<"plainText: "<<plainText<<endl;
+	string encryptedText = des.encrypt(plainText);
 	cout<<"encrypted text: "<<encryptedText<<endl;
 
+	string decryptedText = des.decrypt(encryptedText);
+	cout<<"Decrypted text: "<<decryptedText<<endl;
+
+	return 0;
 }
