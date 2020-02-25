@@ -1,4 +1,5 @@
 #include<bits/stdc++.h>
+#include<conio.h>
 using namespace std;
 
 template<typename T>
@@ -61,12 +62,13 @@ private:
 	void generateIntermediateKeys();
 	string getBinaryString(int , int );
 	int toDecimal(string );
+
 	string polynomialReduction(string , string );	//	returns remainder
 	string XOR(string , string );
 	string substituteNibble(string , vector<vector<string>> &);
 	string rotateNibble(string );
 	string shiftRow(string );
-	string applyMixColumn(string );
+	string applyMixColumn(string , vector<vector<int> >&);
 	template<typename T> void stringToMatrix(string &, vector<vector<T>> &, int , int );
 
 public:
@@ -75,6 +77,7 @@ public:
 		generateIntermediateKeys();
 	}
 
+	string binaryMultiplication(string , string );
 	string encrypt(const string& );
 	string decrypt(const string& );
 };
@@ -136,7 +139,7 @@ void SimplifiedAES::generateIntermediateKeys(){
                     substituteNibble(rotateNibble(this->w3), this->sBoxEncryption));
     //  cout<<"w4: "<<this->w4<<endl;
     this->w5 = XOR(this->w4, this->w3);
-    cout<<"w5: "<<this->w5<<endl;
+//    cout<<"w5: "<<this->w5<<endl;
 }
 
 string SimplifiedAES::getBinaryString(int num, int len = 4){
@@ -161,17 +164,66 @@ int SimplifiedAES::toDecimal(string binaryString){
 	return res;
 }
 
+string SimplifiedAES::binaryMultiplication(string num1, string num2){
+	string res = "";
+	int maxLen = -1;
+	int lvl = 0;
+	vector<string> intermediateMultiplicants;
+
+	for(int i = num2.size()-1; i >= 0; i--){
+		string temp = "";
+		if(num2[i] == '0'){
+			for(int j = 0; j < num1.size(); j++) temp += '0';
+			for(int j = 0; j < lvl; j++) temp += '0';
+		}
+		else{
+			temp = num1;
+			for(int j = 0; j < lvl; j++) temp += '0';
+		}
+
+		maxLen = max(maxLen, (int)temp.size());
+		intermediateMultiplicants.push_back(temp);
+		lvl += 1;
+	}
+
+	for(string &str: intermediateMultiplicants){
+		while(str.size() < maxLen){
+			str = '0' + str;
+		}
+	}
+
+	string xor_str = intermediateMultiplicants[0];
+	for(int i = 1; i < intermediateMultiplicants.size(); i++){
+		xor_str = XOR(xor_str, intermediateMultiplicants[i]);
+	}
+	while(xor_str[0] == '0') xor_str = xor_str.substr(1);
+//	cout<<"xor_str: "<<xor_str<<endl;
+//	cout<<"Its decimal equivalent: "<<toDecimal(xor_str)<<endl;
+//	getch();
+
+	return xor_str;
+}
+
 string SimplifiedAES::polynomialReduction(string divisor, string dividend){
 	int divisorLen = divisor.size();
 	int dividendLen = dividend.size();
 	int pos = divisorLen;
 	string remainder = dividend.substr(0, divisorLen);
-	cout<<"remainder dividend substr: "<<remainder<<endl;
-	cout<<"divisor: "<<divisor<<endl;
+	//	cout<<"remainder dividend substr: "<<remainder<<endl;
+	//	cout<<"divisor: "<<divisor<<endl;
 
 	while(pos < dividendLen){
-		remainder = XOR(divisor, remainder);
-		cout<<"remainder after XOR: "<<remainder<<endl;
+		if(remainder[0] == '0'){
+			string temp = "";
+			for(int i = 0; i < dividendLen; i++) temp += '0';
+			remainder = XOR(remainder, temp);
+		}
+		else{
+			remainder = XOR(divisor, remainder);
+		}
+
+//		remainder = XOR(divisor, remainder);
+		//	cout<<"remainder after XOR: "<<remainder<<endl;
 //		int i = 0;
 		remainder += dividend[pos++];
 		while(remainder[0]=='0' and remainder.size()>divisorLen){
@@ -233,14 +285,14 @@ string SimplifiedAES::shiftRow(string s){
     return res;
 }
 
-string SimplifiedAES::applyMixColumn(string s){
+string SimplifiedAES::applyMixColumn(string s, vector<vector<int>>& matrixMixColumn){
 	string res = "";
 	int sz = s.size();
 	int pos = 0;
 	vector<vector<string> > strMatrix(sz/8, vector<string>(sz/8));
 	for(int i = 0; i < sz/8; i++){
 		for(int j = 0; j < sz/8; j++){
-			strMatrix[i][j] = s.substr(pos, 4);
+			strMatrix[j][i] = s.substr(pos, 4);
 			pos += 4;
 		}
 	}
@@ -252,13 +304,17 @@ string SimplifiedAES::applyMixColumn(string s){
 		for(int j = 0; j < 2; j++){
 			binaryMul = "";
 			for(int k = 0; k < 2; k++){
-				int num1 = this->mixColumnMatrix[i][k];
+				int num1 = matrixMixColumn[i][k];
 				int num2 = toDecimal(strMatrix[k][j]);
+//				cout<<"num1: "<<num1<<", "<<"num2: "<<num2<<", num1*num2: "<<num1*num2<<endl;
+//				cout<<"Binary of num1*num2: "<<getBinaryString(num1*num2, (log2(num1*num2))+1)<<endl;
 				if(num1*num2 > 15){
 					//	Do polynomial reduction
-					string reducedPolynomial = polynomialReduction("10011", getBinaryString(num1*num2, (log2(num1*num2))+1));
+					string binaryDivisor = binaryMultiplication(getBinaryString(num1), getBinaryString(num2));
+					string reducedPolynomial = polynomialReduction("10011",binaryDivisor);
 					while(reducedPolynomial[0]=='0' and reducedPolynomial.size()>4)
 						reducedPolynomial = reducedPolynomial.substr(1);
+//					cout<<"Reduced Polynomial: "<<reducedPolynomial<<endl;
 
 					if(binaryMul == "") binaryMul = reducedPolynomial;
 					else binaryMul = XOR(binaryMul, reducedPolynomial);
@@ -286,45 +342,59 @@ string SimplifiedAES::encrypt(const string &plainText){
     string ark0key = XOR(plainText, this->w0+this->w1);
     string subKey = substituteNibble(ark0key, this->sBoxEncryption);
     string shiftKey = shiftRow(subKey);
-    printBinaryString(shiftKey, "shifted key: ");
+//    printBinaryString(shiftKey, "shifted key: ");
 
-    string mixColumnStr = applyMixColumn(shiftKey);
+    string mixColumnStr = applyMixColumn(shiftKey, this->mixColumnMatrix);
 
 	string ark1key = XOR(mixColumnStr, this->w2+this->w3);
 	subKey = substituteNibble(ark1key, this->sBoxEncryption);
 	shiftKey = shiftRow(subKey);
-	printBinaryString(shiftKey, "substituteNibble shift done: ");
+//	printBinaryString(shiftKey, "substituteNibble shift done: ");
 
 	string ark2key = XOR(shiftKey, this->w4+this->w5);
-	printBinaryString(ark2key, "cipher text is: ");
+//	printBinaryString(ark2key, "cipher text is: ");
 
 	return ark2key;
 }
 
 string SimplifiedAES::decrypt(const string &encryptedText){
 	string ark2key = XOR(encryptedText, this->w4+this->w5);
-	printBinaryString(ark2key, "ARK2 key: ");
 	string shiftKey = shiftRow(ark2key);
 	string subKey = substituteNibble(shiftKey, this->sBoxDecryption);
-	printBinaryString(subKey, "Inverse nibble substitution: ");
 
 	string ark1key = XOR(subKey, this->w2+this->w3);
-	printBinaryString(ark1key, "ARK1 key: ");
 
-	return "";
+	string inverseMixColumnStr = applyMixColumn(ark1key, this->inverseMixColumnMatrix);
+
+	shiftKey = shiftRow(inverseMixColumnStr);
+	subKey = substituteNibble(shiftKey, this->sBoxDecryption);
+	string ark0key = XOR(subKey, this->w0+this->w1);
+
+	return ark0key;
 }
 
 int main(){
     string plainText = "1101011100101000";
+    printBinaryString(plainText, "PlainText: ");
 	//  cout<<"Enter plainText: ";
 	//  cin>>plainText;
 
 	SimplifiedAES cipher("aes_input.txt");
+
+	cipher.binaryMultiplication("1001", "1111");
+
 	string encryptedText = cipher.encrypt(plainText);
 	printBinaryString(encryptedText, "Encryption text: ");
 
 	string decyptedText = cipher.decrypt(encryptedText);
 	printBinaryString(decyptedText, "Decrypted Text: ");
+
+	if(decyptedText == plainText){
+		cout<<"Decryption successful"<<endl;
+	}
+	else{
+		cout<<"Decryption is invalid"<<endl;
+	}
 
 	return 0;
 }
