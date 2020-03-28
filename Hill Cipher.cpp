@@ -62,22 +62,22 @@ int determinant(vector<vector<int>> &matrix, int sz){
 }
 
 int getModuloMultiplicativeInverse(int a, int modulo){
-	int temp_modulo = modulo;
+	int m0 = modulo;
 	int y = 0, x = 1;
 	if(modulo == 1) return 0;
 
 	while(a > 1){
-		int quotient = a/modulo;
+		int q = a / modulo;
 		int t = modulo;
 
 		modulo = a%modulo; a = t;
 		t = y;
 
-		y = x-quotient*y;
+		y = x - q*y;
 		x = t;
 	}
 
-	if(x < 0) x += temp_modulo;
+	if(x < 0) x += m0;
 
 	return x;
 }
@@ -118,6 +118,8 @@ vector<vector<int> > matrixInverse(vector<vector<int>> &matrix){
 	}
 	else{
 		cout<<"Modular invcerse does not exist!!"<<endl;
+		cout<<"Cannot be decrypted"<<endl;
+		exit(EXIT_FAILURE);
 	}
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
@@ -176,7 +178,7 @@ int main(){
 	cout<<endl;
 
 	//	Decryption
-//	vector<vector<int> > inverseKeyMatrix = matrixInverse(keyMatrix);
+	vector<vector<int> > inverseKeyMatrix = matrixInverse(keyMatrix);
 //	printMatrix(inverseKeyMatrix);
 	vector<vector<int>> adjointMatrix(keyMatrix);
 	vector<int> decryptedMatrix = decrypt(encryptedMatrix, adjointMatrix);

@@ -44,6 +44,8 @@ void printBinaryString(string bin_str, string msg = ""){
     cout<<endl;
 }
 
+vector<string> inputStr;
+
 class SimplifiedAES{
 private:
 	string key;
@@ -58,6 +60,7 @@ private:
 	vector<vector<string>> sBoxEncryption;
 	vector<vector<string>> sBoxDecryption;
 
+	void init();
 	void readFile(string &);
 	void generateIntermediateKeys();
 	string getBinaryString(int , int );
@@ -73,7 +76,8 @@ private:
 
 public:
 	SimplifiedAES(string fileName){
-		readFile(fileName);
+		init();
+		//	readFile(fileName);
 		generateIntermediateKeys();
 	}
 
@@ -81,6 +85,33 @@ public:
 	string encrypt(const string& );
 	string decrypt(const string& );
 };
+
+void SimplifiedAES::init(){
+	inputStr.push_back("key:0100101011110101");
+	inputStr.push_back("sBoxEncryption:1001 0100 1010 1011 1101 0001 1000 0101 0110 0010 0000 0011 1100 1110 1111 0111");
+	inputStr.push_back("sBoxDecryption:1010 0101 1001 1011 0001 0111 1000 1111 0110 0000 0010 0011 1100 0100 1101 1110");
+	inputStr.push_back("mixColumnMatrix:1 4 4 1");
+	inputStr.push_back("inverseMixColumnMatrix:9 2 2 9");
+
+	for(string line: inputStr){
+		vector<string> keyValue = split(line, ':');
+		if(keyValue[0] == "key"){
+			this->key = keyValue[1];
+		}
+		else if(keyValue[0] == "sBoxEncryption"){
+			stringToMatrix(keyValue[1], this->sBoxEncryption, 4, 4);
+		}
+		else if(keyValue[0] == "sBoxDecryption"){
+			stringToMatrix(keyValue[1], this->sBoxDecryption, 4, 4);
+		}
+		else if(keyValue[0] == "mixColumnMatrix"){
+			stringToMatrix(keyValue[1], this->mixColumnMatrix, 2, 2);
+		}
+		else if(keyValue[0] == "inverseMixColumnMatrix"){
+			stringToMatrix(keyValue[1], this->inverseMixColumnMatrix, 2, 2);
+		}
+	}
+}
 
 template<typename T> void SimplifiedAES::stringToMatrix(string & s,
 													vector<vector<T>> &matrix,

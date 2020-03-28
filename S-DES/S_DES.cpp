@@ -33,6 +33,7 @@ void printMatrix(vector<vector<T>> matrix){
 	cout<<"================================================="<<endl;
 }
 
+vector<string> inputStr;
 
 class SimplifiedDES{
 private:
@@ -50,6 +51,7 @@ private:
 
 	void stringToArray(string &, vector<int> &, int );
 	void stringToMartrix(string &, vector<vector<int>> &, int , int );
+	void init();
 	void readFile(string &);
 	string applyPermutation(string &, vector<int> &);
 	void generateIntermediateKeys();
@@ -60,13 +62,57 @@ private:
 
 public:
 	SimplifiedDES(string fileName){
-		readFile(fileName);
+		init();
+		//	readFile(fileName);
 		generateIntermediateKeys();
 	}
 
 	string encrypt(const string &);
 	string decrypt(const string &);
 };
+
+void SimplifiedDES::init(){
+	inputStr.push_back("key:0010010111");
+	inputStr.push_back("P10:3 5 2 7 4 10 1 9 8 6");
+	inputStr.push_back("P8:6 3 7 4 8 5 10 9");
+	inputStr.push_back("P4:2 4 3 1");
+	inputStr.push_back("IP:2 6 3 1 4 8 5 7");
+	inputStr.push_back("IP-1:4 1 3 5 7 2 8 6");
+	inputStr.push_back("E/P:4 1 2 3 2 3 4 1");
+	inputStr.push_back("S0:1 0 3 2 3 2 1 0 0 2 1 3 3 1 3 2");
+	inputStr.push_back("S1:0 1 2 3 2 0 1 3 3 0 1 0 2 1 0 3");
+
+	for(string line: inputStr){
+		vector<string> keyValue = split(line, ':');
+		if(keyValue[0] == "key"){
+			this->key = keyValue[1];
+		}
+		else if(keyValue[0] == "P10"){
+			stringToArray(keyValue[1], this->p10, 10);
+		}
+		else if(keyValue[0] == "P8"){
+			stringToArray(keyValue[1], this->p8, DEF_PERMUTATION_SIZE);
+		}
+		else if(keyValue[0] == "P4"){
+			stringToArray(keyValue[1], this->p4, 4);
+		}
+		else if(keyValue[0] == "IP"){
+			stringToArray(keyValue[1], this->initialPermutation, DEF_PERMUTATION_SIZE);
+		}
+		else if(keyValue[0] == "IP-1"){
+			stringToArray(keyValue[1], this->inversePermutation, DEF_PERMUTATION_SIZE);
+		}
+		else if(keyValue[0] == "E/P"){
+			stringToArray(keyValue[1], this->expansionPermutation, DEF_PERMUTATION_SIZE);
+		}
+		else if(keyValue[0] == "S0"){
+			stringToMartrix(keyValue[1], this->s0, 4, 4);
+		}
+		else if(keyValue[0] == "S1"){
+			stringToMartrix(keyValue[1], this->s1, 4,4);
+		}
+	}
+}
 
 void SimplifiedDES::readFile(string &fileName){
 	ifstream file;
@@ -148,12 +194,16 @@ void SimplifiedDES::generateIntermediateKeys(){
 	string combinedKey = leftHalf + rightHalf;
 	this->key1 = applyPermutation(combinedKey, this->p8);
 
+	cout<<"key1: "<<this->key1<<endl;
+
 	leftHalf = combinedKey.substr(0, 5);
 	rightHalf = combinedKey.substr(5);
 	circularLeftShift(leftHalf, 2);
 	circularLeftShift(rightHalf, 2);
 	combinedKey = leftHalf + rightHalf;
 	this->key2 = applyPermutation(combinedKey, this->p8);
+
+	cout<<"key2: "<<this->key2<<endl;
 }
 
 void SimplifiedDES::circularLeftShift(string& s, int shiftBy){
@@ -234,14 +284,17 @@ string SimplifiedDES::XOR(string &op1, string &op2){
 
 string SimplifiedDES::encrypt(const string &plainText){
 	string ipBits = this->applyPermutation((string &)plainText, this->initialPermutation);
+	cout<<"Initial permutation applied: "<<ipBits<<endl;
 	string leftHalf = ipBits.substr(0, 4);
 	string rightHalf = ipBits.substr(4);
 
 	string fkBits = this->FK(leftHalf, rightHalf, this->key1);
+	cout<<"fkbits: "<<fkBits<<endl;
 
 	rightHalf = fkBits.substr(0, 4);
 	leftHalf = fkBits.substr(4);
 	fkBits = this->FK(leftHalf, rightHalf, this->key2);
+	cout<<"2nd fkBits: "<<fkBits<<endl;
 
 	string cipherText = this->applyPermutation(fkBits, this->inversePermutation);
 	return cipherText;
@@ -263,8 +316,8 @@ string SimplifiedDES::decrypt(const string &encryptedText){
 }
 
 int main(){
-	string plainText;
-	cout<<"Enter plainText: "; cin>>plainText;
+	string plainText = "11001001";
+//	cout<<"Enter plainText: "; cin>>plainText;
 
 	SimplifiedDES des("des_input.txt");
 	cout<<endl;
@@ -274,6 +327,13 @@ int main(){
 
 	string decryptedText = des.decrypt(encryptedText);
 	cout<<"Decrypted text: "<<decryptedText<<endl;
+
+	if(plainText == decryptedText){
+		cout<<"Decryption successful!"<<endl;
+	}
+	else {
+		cout<<"Decryption invalid"<<endl;
+	}
 
 	return 0;
 }
